@@ -4,28 +4,41 @@
     <h2 class="section-time">{{ currentTime }}</h2>
   </div>
   <div class="card">
-    <div v-for="(e, i) in event" :key="e[topic]">
-      <div v-if="i" class="card-time">
+    <div
+      v-for="e in event"
+      :key="e[topic]"
+      :class="[isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'backgroundCurrent' : 'background', isMoreTimeRange(e?.[startEvent]) ? 'displayNone' : undefined]"
+    >
+      <div
+        :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-time card-time__current' : 'card-time'"
+      >
         {{ e?.[startEvent] }} -
         {{ endEvent(e?.[startEvent], e?.[time]) }}
       </div>
-      <div v-if="i && e[speaker] !== '-'" class="card-speaker">
+      <div v-if="e[speaker] !== '-'"
+        :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-speaker card-speaker__current' : 'card-speaker'"
+      >
         <img v-if="e[logo] !== '-'" :src="e?.[logo]" :alt="e?.[logo]" />
         {{ e[speaker] }}
       </div>
-      <div v-if="i" class="card-topic">
+      <div
+        :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-topic card-topic__current' : 'card-topic'"
+      >
         {{ e?.[topic] }}
       </div>
-      <div v-if="i && e[typeEvent] !== '-'" class="card-footer">
-        <div class="card-footer__type card-footer__hover">
+      <div v-if="e[typeEvent] !== '-'" class="card-footer">
+        <div
+          :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-hover__current' : 'card-type card-hover'">
             {{ e[typeEvent] }}
         </div> 
-        <div class="card-footer__lang">
+        <div 
+          :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-current' : 'card-lang'">
             {{ e?.[lang] }}
           </div> 
-        <div class="card-footer__chapter">
+        <div 
+          :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-current' : 'card-chapter'">
             {{ e?.[chapter] }}
-        </div> 
+        </div>
       </div>
     </div>
   </div>
@@ -52,12 +65,11 @@ const chapter = '__8'
 const fetchignData = async (page) => {
   const res = await fetch(`src/mockAPI/report_${page}.json`)
   const data = await res.json()
-  event.value = data
+  event.value = data.filter(e => e['__1'] !== 'Наименование события')
 }
 
 watch(() => route.params.events, newValue => {
     event.value = fetchignData(newValue)
-    console.log('event', event.value);
   }
 )
 
@@ -72,6 +84,28 @@ function updateTime(){
 }
 updateTime()
 setInterval(updateTime, 30_000)
+
+function isInTimeRange(startTime, endTime) {
+    const now = new Date();
+    const start = new Date();
+    const end = new Date();
+    const [startHour, startMinute] = startTime.split(':');
+    start.setHours(startHour, startMinute, 0, 0);
+    const [endHour, endMinute] = endTime.split(':');
+    end.setHours(endHour, endMinute, 0, 0);
+
+    return now >= start && now <= end;
+}
+
+
+function isMoreTimeRange(startTime) {
+    const now = new Date();
+    const start = new Date();
+    const [startHour, startMinute] = startTime.split(':');
+    start.setHours(startHour, startMinute, 0, 0);
+
+    return now >= start
+}
 
 const endEvent = (start, time) => {
   const [hour, minute] = start?.split(':')?.map(Number) || [];
@@ -111,51 +145,83 @@ const endEvent = (start, time) => {
     line-height: 72.61px;
   }
 }
-.card {
+.background {
+  background: #eee;
+  border-radius: 32px;
+  padding: 24px;
+}
+.backgroundCurrent {
   background: #777421;
   border-radius: 32px;
   padding: 24px;
+}
+.displayNone {
+  display: none;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
   &-time {
-    color: #fff;
+    color: #5E5E5E;
     font-size: 60px;
     line-height: 72.61px;
     font-weight: 700;
     margin-bottom: 30px;
-}
+    &__current {
+      color: #fff;
+    }
+  }
   &-speaker {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #fff;
+    color: #5E5E5E;
     font-weight: 500;
     font-size: 28px;
     line-height: 33.89px;
     margin-bottom: 30px;
+    &__current {
+      color: #fff;
+    }
   }
   &-topic {
-    color: #fff;
+    color: #5E5E5E;
     font-weight: 700;
     font-size: 48px;
     line-height: 58.09px;
     margin-bottom: 30px;
+    &__current {
+      color: #fff;
+    }
   }
   &-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
-    &__type, &__lang, &__chapter {
-      color: #fff;
-      border: 1px solid #A6D447;
+  }
+  &-type, &-lang, &-chapter {
+    color: #5E5E5E;
+    border: 1px solid #5E5E5E;
+    border-radius: 8px;
+    padding: 12px;
+  }
+  &-current {
+    color: #fff;
+    border: 1px solid #A6D447;
+    border-radius: 8px;
+    padding: 12px;
+  }
+  &-hover {
+    background: #848484;
+    border: none;
+    color: #fff;
+    &__current {
+      background: #F1C658;
       border-radius: 8px;
       padding: 12px;
     }
-    &__hover {
-      background: #F1C658;
-      border: none;
-      color: #213477;
-    }
   }
 }
-
 </style>
