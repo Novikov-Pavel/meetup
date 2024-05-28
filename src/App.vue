@@ -7,13 +7,16 @@
     <div
       v-for="e in event"
       :key="e[topic]"
-      :class="[isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'backgroundCurrent' : 'background', isMoreTimeRange(e?.[startEvent]) ? 'displayNone' : undefined]"
+      :class="[isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'backgroundCurrent' : 'background', isMoreTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'displayNone' : undefined]"
     >
-      <div
-        :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-time card-time__current' : 'card-time'"
-      >
-        {{ e?.[startEvent] }} -
-        {{ endEvent(e?.[startEvent], e?.[time]) }}
+      <div class="flex">
+        <div
+          :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-time card-time__current' : 'card-time'"
+        >
+          {{ e?.[startEvent] }} -
+          {{ endEvent(e?.[startEvent], e?.[time]) }}
+        </div>
+          Осталось {{ minutesUntilEnd(endEvent(e?.[startEvent], e?.[time])) }} мин
       </div>
       <div v-if="e[speaker] !== '-'"
         :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-speaker card-speaker__current' : 'card-speaker'"
@@ -98,13 +101,13 @@ function isInTimeRange(startTime, endTime) {
 }
 
 
-function isMoreTimeRange(startTime) {
-    const now = new Date();
-    const start = new Date();
-    const [startHour, startMinute] = startTime.split(':');
-    start.setHours(startHour, startMinute, 0, 0);
+function isMoreTimeRange(startTime, endTime) {
+  const now = new Date();
+  const start = new Date();
+  const [startHour, startMinute] = startTime.split(':');
+  start.setHours(startHour, startMinute, 0, 0);
 
-    return now >= start
+  return now >= start && !isInTimeRange(startTime, endTime)
 }
 
 const endEvent = (start, time) => {
@@ -119,6 +122,21 @@ const endEvent = (start, time) => {
   ${newHour?.toString()?.padStart(2, '0')}:${newMinute?.toString()?.padStart(2, '0')}`
 
   return newStartEvent
+}
+
+function minutesUntilEnd(endTime) {
+  const [hour, minute] = endTime.split(':').map(Number);
+  const currentHour = new Date().getHours();
+  const currentMinute = new Date().getMinutes();
+  
+  let hoursRemaining = hour - currentHour;
+  if (hour < currentHour || (hour === currentHour && minute < currentMinute)) {
+    hoursRemaining += 24;
+  }
+
+  let minutesRemaining = hoursRemaining * 60 - currentMinute + minute;
+  
+  return minutesRemaining;
 }
 
 </script>
@@ -157,6 +175,11 @@ const endEvent = (start, time) => {
 }
 .displayNone {
   display: none;
+}
+.flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
 }
 .card {
   display: flex;
