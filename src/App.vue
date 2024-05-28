@@ -1,4 +1,21 @@
 <template>
+  <div class="flex">
+    <router-link :to="{ name:'mainPage', params: { events: '1' } }">
+      Page 1
+    </router-link>
+    <router-link :to="{ name:'mainPage', params: { events: '2' } }">
+      Page 2
+    </router-link>
+    <router-link :to="{ name:'mainPage', params: { events: '3' } }">
+      Page 3
+    </router-link>
+    <router-link :to="{ name:'mainPage', params: { events: '4' } }">
+      Page 4
+    </router-link>
+    <router-link :to="{ name:'mainPage', params: { events: '5' } }">
+      Page 5
+    </router-link>
+  </div>
   <div class="section">
     <h1 class="section-title"> СЕКЦИЯ {{ $route?.params?.events }} </h1>
     <h2 class="section-time">{{ currentTime }}</h2>
@@ -7,7 +24,7 @@
     <div
       v-for="e in event"
       :key="e[topic]"
-      :class="[isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'backgroundCurrent' : 'background', isMoreTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'displayNone' : undefined]"
+      :class="[isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'backgroundCurrent' : 'background', isMoreTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'displayNone' : undefined, { flex: e[speaker] === '-' &&!isMoreTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) }]"  
     >
       <div class="flex">
         <div
@@ -16,13 +33,27 @@
           {{ e?.[startEvent] }} -
           {{ endEvent(e?.[startEvent], e?.[time]) }}
         </div>
+        <div
+          v-if="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) && e[speaker] !== '-'"
+        >
           Осталось {{ minutesUntilEnd(endEvent(e?.[startEvent], e?.[time])) }} мин
+        </div>
       </div>
       <div v-if="e[speaker] !== '-'"
         :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-speaker card-speaker__current' : 'card-speaker'"
       >
+      <div
+        v-for="person in renderSpeakers(e[speaker])"
+        :key="person.sername"
+        class="flex align-items gap-10"
+      >
         <img v-if="e[logo] !== '-'" :src="e?.[logo]" :alt="e?.[logo]" />
-        {{ e[speaker] }}
+        <div class="flex column">
+          <div>{{ person.name }}</div>
+          <div>{{ person.surname }}</div>
+          <div>{{ person.job }}</div>
+        </div>
+      </div>
       </div>
       <div
         :class="isInTimeRange(e?.[startEvent], endEvent(e?.[startEvent], e?.[time])) ? 'card-topic card-topic__current' : 'card-topic'"
@@ -51,19 +82,12 @@
 import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router'
 import { useDateFormat, useNow } from '@vueuse/core'
+import { topic, chapter, lang, logo, speaker, startEvent, time, typeEvent } from '@/composibles/variables';
+import { isInTimeRange, isMoreTimeRange, endEvent, minutesUntilEnd, renderSpeakers } from '@/composibles'
 
 const getDay = useDateFormat(useNow(), 'ddd')
 const route = useRoute()
 const event = ref([])
-
-const topic = '__1'
-const startEvent = '__2'
-const time = '__3'
-const speaker = '__4'
-const logo = '__5'
-const typeEvent = '__6'
-const lang = '__7'
-const chapter = '__8'
 
 const fetchignData = async (page) => {
   const res = await fetch(`src/mockAPI/report_${page}.json`)
@@ -80,7 +104,7 @@ watch(() => [route.params.events], newValue => {
 })
 
 const currentTime = ref('')
-function updateTime(){
+const updateTime = () => {
   const date = new Date()
   const hours = date.getHours()
   let minutes = date.getMinutes()
@@ -88,64 +112,15 @@ function updateTime(){
   const dateNow = `${day}, ${hours}:${minutes}`
   currentTime.value = dateNow
 }
-updateTime()
 setInterval(updateTime, 30_000)
-
-function isInTimeRange(startTime, endTime) {
-    const now = new Date();
-    const start = new Date();
-    const end = new Date();
-    const [startHour, startMinute] = startTime.split(':');
-    start.setHours(startHour, startMinute, 0, 0);
-    const [endHour, endMinute] = endTime.split(':');
-    end.setHours(endHour, endMinute, 0, 0);
-
-    return now >= start && now <= end;
-}
-
-
-function isMoreTimeRange(startTime, endTime) {
-  const now = new Date();
-  const start = new Date();
-  const [startHour, startMinute] = startTime.split(':');
-  start.setHours(startHour, startMinute, 0, 0);
-
-  return now >= start && !isInTimeRange(startTime, endTime)
-}
-
-const endEvent = (start, time) => {
-  const [hour, minute] = start?.split(':')?.map(Number) || [];
-  let newMinute = minute + Number(time);
-  let newHour = hour + Math.floor(newMinute / 60);
-  newMinute = newMinute % 60;
-  if (newHour > 23) {
-    newHour = newHour % 24;
-  }
-  const newStartEvent = `
-  ${newHour?.toString()?.padStart(2, '0')}:${newMinute?.toString()?.padStart(2, '0')}`
-
-  return newStartEvent
-}
-
-function minutesUntilEnd(endTime) {
-  const [hour, minute] = endTime.split(':').map(Number);
-  const currentHour = new Date().getHours();
-  const currentMinute = new Date().getMinutes();
-  
-  let hoursRemaining = hour - currentHour;
-  if (hour < currentHour || (hour === currentHour && minute < currentMinute)) {
-    hoursRemaining += 24;
-  }
-
-  let minutesRemaining = hoursRemaining * 60 - currentMinute + minute;
-  
-  return minutesRemaining;
-}
 
 </script>
 
 <style lang="scss">
 @import url('https://fonts.googleapis.com/css2?family=Inter:slnt,wght@-10..0,100..900&display=swap');
+body {
+  overflow: hidden;
+}
 
 #app {
   max-width: 1080px;
@@ -184,6 +159,15 @@ function minutesUntilEnd(endTime) {
   justify-content: space-between;
   align-items: start;
 }
+.align-items {
+  align-items: center;
+}
+.gap-10 {
+  gap: 10px;
+}
+.column {
+  flex-direction: column;
+}
 .card {
   display: flex;
   flex-direction: column;
@@ -200,6 +184,7 @@ function minutesUntilEnd(endTime) {
   }
   &-speaker {
     display: flex;
+    justify-content: space-between;
     align-items: center;
     gap: 10px;
     color: #5E5E5E;

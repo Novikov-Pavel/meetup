@@ -1,0 +1,8 @@
+export const topic = '__1'
+export const startEvent = '__2'
+export const time = '__3'
+export const speaker = '__4'
+export const logo = '__5'
+export const typeEvent = '__6'
+export const lang = '__7'
+export const chapter = '__8'
