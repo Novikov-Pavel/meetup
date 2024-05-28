@@ -68,13 +68,16 @@ const chapter = '__8'
 const fetchignData = async (page) => {
   const res = await fetch(`src/mockAPI/report_${page}.json`)
   const data = await res.json()
-  event.value = data.filter(e => e['__1'] !== 'Наименование события')
+  event.value = data.filter(e => e[topic] !== 'Наименование события')
 }
 
-watch(() => route.params.events, newValue => {
-    event.value = fetchignData(newValue)
-  }
-)
+setInterval(() => {
+  fetchignData(route.params.events)
+}, 300_000)
+
+watch(() => [route.params.events], newValue => {
+  event.value = fetchignData(newValue)
+})
 
 const currentTime = ref('')
 function updateTime(){
